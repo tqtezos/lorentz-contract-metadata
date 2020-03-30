@@ -20,8 +20,8 @@ import Lorentz
 import Lorentz.Contracts.ManagedLedger.Impl
 import Lorentz.Contracts.ManagedLedger.Types
 
+import Lorentz.Contracts.Metadata
 import Lorentz.Contracts.ManagedLedger.Metadata.Impl
-import Lorentz.Contracts.ManagedLedger.Metadata.Types
 
 import Lorentz.Contracts.ManagedLedger (mkStorage, Storage)
 
@@ -47,8 +47,8 @@ data Parameter
   deriving stock Generic
   deriving anyclass IsoValue
 
-instance ParameterEntryPoints Parameter where
-  parameterEntryPoints = pepPlain
+-- instance ParameterEntryPoints Parameter where
+--   parameterEntryPoints = pepPlain
 
 ----------------------------------------------------------------------------
 -- Implementation

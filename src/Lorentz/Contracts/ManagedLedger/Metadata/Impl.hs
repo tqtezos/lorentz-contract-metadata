@@ -16,7 +16,7 @@ import Lorentz
 import Lorentz.Contracts.ManagedLedger.Impl ()
 
 import Lorentz.Contracts.ManagedLedger.Types (LedgerValue)
-import Lorentz.Contracts.ManagedLedger.Metadata.Types
+import Lorentz.Contracts.Metadata
 
 type LedgerC store = StorageContains store
   [ "totalSupply" := Natural
