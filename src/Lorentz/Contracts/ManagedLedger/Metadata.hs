@@ -34,7 +34,6 @@ import Lorentz.Contracts.ManagedLedger (mkStorage, Storage)
 data Parameter
   = Transfer         TransferParams
   | Approve          ApproveParams
-  -- | ApproveCAS       ApproveCasParams
   | GetAllowance     (View GetAllowanceParams Natural)
   | GetBalance       (View GetBalanceParams Natural)
   | GetTotalSupply   (View () Natural)

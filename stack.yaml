@@ -24,7 +24,7 @@ extra-deps:
 - morley-1.0.0
 - morley-prelude-0.3.0@sha256:9e9473ac14cfa206adf0a3700764c0251de05042f1fe45daf9cb8556079ae663,2085
 
-#   # morley-1.0.0 doesn't come with a version of morley-ledgers on hackage
+# morley-1.0.0 doesn't come with a version of morley-ledgers on hackage
 - git:
     https://gitlab.com/morley-framework/morley.git
     # ^ CI cannot use ssh, so we use http clone here
