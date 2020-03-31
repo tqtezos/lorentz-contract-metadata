@@ -178,17 +178,17 @@ runCmdLnArgs = \case
     printLorentzContract forceOneLine $
     Metadata.managedLedgerMetadataContract tokenMetadata'
   Init xs -> TL.putStrLn . printLorentzValue forceSingleLine $ xs
-  Transfer xs -> TL.putStrLn . printLorentzValue forceSingleLine $ xs
-  Approve xs -> TL.putStrLn . printLorentzValue forceSingleLine $ xs
-  GetAllowance xs -> TL.putStrLn . printLorentzValue forceSingleLine $ xs
-  GetBalance xs -> TL.putStrLn . printLorentzValue forceSingleLine $ xs
-  GetTotalSupply xs -> TL.putStrLn . printLorentzValue forceSingleLine $ xs
-  SetPause xs -> TL.putStrLn . printLorentzValue forceSingleLine $ xs
-  SetAdministrator xs -> TL.putStrLn . printLorentzValue forceSingleLine $ xs
-  GetAdministrator xs -> TL.putStrLn . printLorentzValue forceSingleLine $ xs
-  Mint xs -> TL.putStrLn . printLorentzValue forceSingleLine $ xs
-  Burn xs -> TL.putStrLn . printLorentzValue forceSingleLine $ xs
-  GetMetadata xs -> TL.putStrLn . printLorentzValue forceSingleLine $ xs
+  Transfer xs -> TL.putStrLn . printLorentzValue forceSingleLine $ Metadata.Transfer xs
+  Approve xs -> TL.putStrLn . printLorentzValue forceSingleLine $ Metadata.Approve xs
+  GetAllowance xs -> TL.putStrLn . printLorentzValue forceSingleLine $ Metadata.GetAllowance xs
+  GetBalance xs -> TL.putStrLn . printLorentzValue forceSingleLine $ Metadata.GetBalance xs
+  GetTotalSupply xs -> TL.putStrLn . printLorentzValue forceSingleLine $ Metadata.GetTotalSupply xs
+  SetPause xs -> TL.putStrLn . printLorentzValue forceSingleLine $ Metadata.SetPause xs
+  SetAdministrator xs -> TL.putStrLn . printLorentzValue forceSingleLine $ Metadata.SetAdministrator xs
+  GetAdministrator xs -> TL.putStrLn . printLorentzValue forceSingleLine $ Metadata.GetAdministrator xs
+  Mint xs -> TL.putStrLn . printLorentzValue forceSingleLine $ Metadata.Mint xs
+  Burn xs -> TL.putStrLn . printLorentzValue forceSingleLine $ Metadata.Burn xs
+  GetMetadata xs -> TL.putStrLn . printLorentzValue forceSingleLine $ Metadata.GetMetadata xs
   where
     forceSingleLine = True
 

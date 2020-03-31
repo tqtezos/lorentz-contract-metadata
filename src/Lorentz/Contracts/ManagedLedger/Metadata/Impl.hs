@@ -2,9 +2,6 @@
 
 {-# OPTIONS -Wno-unused-do-bind #-}
 
--- | Implementation of managed ledger which does not require
--- particular storage type.
-
 module Lorentz.Contracts.ManagedLedger.Metadata.Impl (getMetadata) where
 
 import Prelude hiding (drop, (>>))
