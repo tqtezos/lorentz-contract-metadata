@@ -16,26 +16,22 @@ import Michelson.Typed.Scope
 import Util.IO
 import Michelson.Printer
 
--- import qualified Options.Applicative as Opt
--- import qualified Data.Text.Lazy as TL
-import Data.Singletons
+import qualified Options.Applicative as Opt
+import qualified Data.Text.Lazy as TL
 import Text.PrettyPrint.ANSI.Leijen.Internal (Doc, linebreak)
 
--- import qualified Lorentz.Contracts.Whitelist.CmdLnArgs as WhitelistCmdLnArgs
--- import qualified Lorentz.Contracts.Whitelist.Wrapper.ManagedLedger.CmdLnArgs as WhitelistManagedLedgerCmdLnArgs
+import qualified Lorentz.Contracts.ManagedLedger.Metadata.CmdLnArgs as MetadataCmdLnArgs
 
 -- | Convert to a `Value`, untype, and render
 showValue :: (IsoValue t, SingI (ToT t), HasNoOp (ToT t)) => t -> TL.Text
 showValue = printTypedValue False . toVal
 
 data CmdLnArgs
- -- WhitelistCmdLnArgs { whitelistCmdLnArgs :: WhitelistCmdLnArgs.CmdLnArgs }
-  -- WhitelistManagedLedgerCmdLnArgs { whitelistManagedLedgerCmdLnArgs :: WhitelistManagedLedgerCmdLnArgs.CmdLnArgs }
+  = MetadataCmdLnArgs { whitelistCmdLnArgs :: MetadataCmdLnArgs.CmdLnArgs }
 
 argParser :: Opt.Parser CmdLnArgs
-argParser = Opt.hsubparser $ mconcat []
-  -- [ Opt.command "Whitelist" $ fmap WhitelistCmdLnArgs $ Opt.info WhitelistCmdLnArgs.argParser WhitelistCmdLnArgs.infoMod
-  -- , Opt.command "WhitelistManagedLedger" $ fmap WhitelistManagedLedgerCmdLnArgs $ Opt.info WhitelistManagedLedgerCmdLnArgs.argParser WhitelistManagedLedgerCmdLnArgs.infoMod
+argParser = Opt.hsubparser $ mconcat
+  [ Opt.command "Metadata" $ fmap MetadataCmdLnArgs $ Opt.info MetadataCmdLnArgs.argParser MetadataCmdLnArgs.infoMod
   ]
   where
 
@@ -79,7 +75,5 @@ main = do
     run :: CmdLnArgs -> IO ()
     run =
       \case
-        -- WhitelistCmdLnArgs {..} ->
-        --   WhitelistCmdLnArgs.runCmdLnArgs whitelistCmdLnArgs
-        -- WhitelistManagedLedgerCmdLnArgs {..} ->
-        --   WhitelistManagedLedgerCmdLnArgs.runCmdLnArgs whitelistManagedLedgerCmdLnArgs
+        MetadataCmdLnArgs {..} ->
+          MetadataCmdLnArgs.runCmdLnArgs whitelistCmdLnArgs

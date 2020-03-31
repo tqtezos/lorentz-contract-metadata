@@ -1,7 +1,7 @@
 <<: !include "./hpack/module.yaml"
 
 <<: *meta
-name:                lorentz-contract-whitelist
+name:                lorentz-contract-metadata
 version:             0.1.0.1
 github:              "tqtezos/lorentz-contract-metadata"
 license:             BSD3
@@ -33,8 +33,9 @@ library:
     - aeson
     - constraints
     - binary
+    - morley-lorentz
     # - lorentz-contracts
-    - lorentz-contract-param
+    # - lorentz-contract-param
     - optparse-applicative
     - transformers
 
@@ -55,6 +56,7 @@ executables:
     - morley-prelude
     - singletons
     - ansi-wl-pprint
+    - morley-lorentz
 
 tests:
   lorentz-contract-metadata-test:

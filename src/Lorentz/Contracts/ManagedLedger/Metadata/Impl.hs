@@ -2,9 +2,6 @@
 
 {-# OPTIONS -Wno-unused-do-bind #-}
 
--- | Implementation of managed ledger which does not require
--- particular storage type.
-
 module Lorentz.Contracts.ManagedLedger.Metadata.Impl (getMetadata) where
 
 import Prelude hiding (drop, (>>))
@@ -16,7 +13,7 @@ import Lorentz
 import Lorentz.Contracts.ManagedLedger.Impl ()
 
 import Lorentz.Contracts.ManagedLedger.Types (LedgerValue)
-import Lorentz.Contracts.ManagedLedger.Metadata.Types
+import Lorentz.Contracts.Metadata
 
 type LedgerC store = StorageContains store
   [ "totalSupply" := Natural
