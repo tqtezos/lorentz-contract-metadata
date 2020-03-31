@@ -92,6 +92,18 @@ parseView parseArg =
 parseView_ :: forall r. NiceParameterFull r => Proxy r -> Opt.Parser (View () (GetDefaultEntryPointArg r))
 parseView_ _ = parseView @() @r $ pure ()
 
+
+-- | Parse a `Bool` (optional) argument, given its field name
+parseBool :: String -> Opt.Parser Bool
+parseBool name =
+  Opt.option Opt.auto $
+  mconcat
+    [ Opt.long name
+    , Opt.metavar "BOOL"
+    , Opt.help $
+      "Bool representing whether the contract is initially " <> name <> "."
+    ]
+
 -- | Parse a `String`
 parseString :: String -> Opt.Parser String
 parseString name = Opt.strOption $ mconcat

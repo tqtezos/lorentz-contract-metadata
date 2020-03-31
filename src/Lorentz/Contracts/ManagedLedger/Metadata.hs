@@ -49,6 +49,10 @@ data Parameter
 -- instance ParameterEntryPoints Parameter where
 --   parameterEntryPoints = pepPlain
 
+instance ParameterHasEntryPoints Parameter where
+  type ParameterEntryPointsDerivation Parameter = EpdPlain
+
+
 ----------------------------------------------------------------------------
 -- Implementation
 ----------------------------------------------------------------------------

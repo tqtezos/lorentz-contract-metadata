@@ -3,40 +3,17 @@
 module Lorentz.Contracts.ManagedLedger.Metadata.CmdLnArgs where
 
 import Control.Applicative
-import Text.Show (Show(..))
-import Data.List
-import Data.Either
-import Data.Function (id)
 import Data.Functor
-import Prelude (FilePath, IO, Ord(..))
-import Data.String (IsString(..), String)
+import Prelude (FilePath, IO)
 import Data.Maybe
-import Data.Typeable
-import Text.Read
 
-import Lorentz hiding (get)
-import Michelson.Parser
-import Michelson.Typed.Annotation
-import Michelson.Typed.Arith
-import Michelson.Typed.Haskell.Value
-import Michelson.Typed.Scope
-import Michelson.Typed.Sing
-import Michelson.Typed.T
-import Michelson.Typed.Value
+import Lorentz
 import Util.IO
-import qualified Michelson.Untyped.Type as U
+import Util.Named
 
 import qualified Options.Applicative as Opt
-import qualified Data.Text as T
 import qualified Data.Text.Lazy.IO as TL
 import qualified Data.Map as Map
-import Data.Constraint
-import Data.Singletons
-
--- import Lorentz.Contracts.Util ()
--- import Lorentz.Contracts.SomeContractParam
--- import Lorentz.Contracts.Parse
--- import qualified Lorentz.Contracts.GenericMultisig.Wrapper as G
 
 import Lorentz.Contracts.ManagedLedger.Metadata.Parsers
 import qualified Lorentz.Contracts.ManagedLedger.Types as Metadata
@@ -59,58 +36,21 @@ data CmdLnArgs
   | Burn             Metadata.BurnParams
   | GetMetadata      (View [TokenId] [TokenMetadata])
 
-  -- | Transfer !Metadata.TransferParams
-  -- | SetIssuer
-  --     { newIssuer :: !SomeContractParam
-  --     , wrapped :: !Bool
-  --     }
-  -- | AddUser
-  --     { newUser :: !SomeContractParam
-  --     , newUserWhitelistId :: !(Maybe WhitelistId)
-  --     , wrapped :: !Bool
-  --     }
-  -- | SetWhitelistOutbound
-  --     { whitelistOutboundParams :: !WhitelistOutboundParams
-  --     , wrapped :: !Bool
-  --     }
-  -- | SetAdmin
-  --     { admin :: !Address
-  --     , wrapped :: !Bool
-  --     }
-  -- | GetIssuer
-  --     { viewIssuer :: !(View_ ())
-  --     , wrapped :: !Bool
-  --     }
-  -- | GetUser
-  --     { viewUser :: !(View SomeContractParam (Maybe WhitelistId))
-  --     , wrapped :: !Bool
-  --     }
-  -- | GetWhitelist
-  --     { viewWhitelist :: !(View WhitelistId (Maybe OutboundWhitelists))
-  --     , wrapped :: !Bool
-  --     }
-  -- | GetAdmin
-  --     { viewAdmin :: !(View_ Address)
-  --     , wrapped :: !Bool
-  --     }
-  -- | WrappedParam
-  --     { wrappedParam :: !SomeContractParam
-  --     }
-
 argParser :: Opt.Parser CmdLnArgs
 argParser = Opt.hsubparser $ mconcat
   [ printSubCmd
   , initSubCmd
-  -- , assertTransferSubCmd
-  -- , setIssuerSubCmd
-  -- , addUserSubCmd
-  -- , setWhitelistOutboundSubCmd
-  -- , setAdminSubCmd
-  -- , getIssuerSubCmd
-  -- , getUserSubCmd
-  -- , getWhitelistSubCmd
-  -- , getAdminSubCmd
-  -- , wrappedParamSubCmd
+  , getMetadataSubCmd
+  , burnSubCmd
+  , mintSubCmd
+  , getAdministratorSubCmd
+  , setAdministratorSubCmd
+  , setPauseSubCmd
+  , getTotalSupplySubCmd
+  , getBalanceSubCmd
+  , getAllowanceSubCmd
+  , approveSubCmd
+  , transferSubCmd
   ]
   where
     mkCommandParser commandName parser desc =
@@ -138,94 +78,92 @@ argParser = Opt.hsubparser $ mconcat
       )
       "Initial storage for the ManagedLedger Metadata contract"
 
-    -- assertTransferSubCmd =
-    --   mkCommandParser "assertTransfer"
-    --   (AssertTransfer <$> parseSomeTransferParams)
-    --   "Generate the parameter for the Whitelist contract: AssertTransfer"
+    transferSubCmd =
+      mkCommandParser "transfer"
+      (Transfer <$>
+        ((,,) <$>
+          ((#from .!) <$> parseAddress "from") <*>
+          ((#to .!) <$> parseAddress "to") <*>
+          ((#value .!) <$> parseNatural "value")
+        )
+      )
+      "Transfer parameter for the ManagedLedger Metadata contract"
 
-    -- setIssuerSubCmd =
-    --   mkCommandParser "SetIssuer"
-    --   (SetIssuer <$>
-    --     parseSomeContractParam "newIssuer" <*>
-    --     parseBool "wrapped"
-    --   )
-    --   "Generate the (wrapped) parameter for the Whitelist contract: SetIssuer"
+    approveSubCmd =
+      mkCommandParser "approve"
+      (Approve <$>
+        ((,) <$>
+          ((#spender .!) <$> parseAddress "spender") <*>
+          ((#value .!) <$> parseNatural "value")
+        )
+      )
+      "Approve parameter for the ManagedLedger Metadata contract"
 
-    -- addUserSubCmd =
-    --   mkCommandParser "AddUser"
-    --   (AddUser <$>
-    --     parseSomeContractParam "newUser" <*>
-    --     parseMaybe (parseNatural "newUserWhitelistId") <*>
-    --     parseBool "wrapped"
-    --   )
-    --   "Generate the (wrapped) parameter for the Whitelist contract: AddUser"
+    getAllowanceSubCmd =
+      mkCommandParser "getAllowance"
+      (GetAllowance <$> parseView @_ @Natural
+        ((,) <$>
+          ((#owner .!) <$> parseAddress "owner") <*>
+          ((#spender .!) <$> parseAddress "spender")
+        )
+      )
+      "GetAllowance parameter for the ManagedLedger Metadata contract"
 
-    -- setWhitelistOutboundSubCmd =
-    --   mkCommandParser "SetWhitelistOutbound"
-    --   (SetWhitelistOutbound <$>
-    --     (WhitelistOutboundParams <$>
-    --       parseNatural "whitelistId" <*>
-    --       (parseMaybe (Whitelist.mkOutboundWhitelists <$>
-    --         parseBool "restricted" <*>
-    --         Opt.option
-    --           (parseList Opt.auto)
-    --           (mconcat
-    --             [ Opt.long "outboundWhitelist"
-    --             , Opt.metavar "[Natural]"
-    --             , Opt.help "List of allowed outbound whitelists"
-    --             ]
-    --           )
-    --       ))
-    --     ) <*>
-    --     parseBool "wrapped"
-    --   )
-    --   "Generate the (wrapped) parameter for the Whitelist contract: SetWhitelistOutbound"
+    getBalanceSubCmd =
+      mkCommandParser "getBalance"
+      (GetBalance <$> parseView @_ @Natural
+        ((#owner .!) <$> parseAddress "owner")
+      )
+      "GetBalance parameter for the ManagedLedger Metadata contract"
 
-    -- setAdminSubCmd =
-    --   mkCommandParser "SetAdmin"
-    --   (SetAdmin <$>
-    --     parseAddress "admin" <*>
-    --     parseBool "wrapped"
-    --   )
-    --   "Generate the (wrapped) parameter for the Whitelist contract: SetAdmin"
+    getTotalSupplySubCmd =
+      mkCommandParser "getTotalSupply"
+      (GetTotalSupply <$> parseView_ (Proxy @Natural)
+      )
+      "GetTotalSupply parameter for the ManagedLedger Metadata contract"
 
-    -- getIssuerSubCmd =
-    --   mkCommandParser "GetIssuer"
-    --   (GetIssuer <$>
-    --     parseView_ <*>
-    --     parseBool "wrapped"
-    --   )
-    --   "Generate the (wrapped) parameter for the Whitelist contract: GetIssuer"
+    setPauseSubCmd =
+      mkCommandParser "setPause"
+      (SetPause <$> parseBool "paused"
+      )
+      "SetPause parameter for the ManagedLedger Metadata contract"
 
-    -- getUserSubCmd =
-    --   mkCommandParser "GetUser"
-    --   (GetUser <$>
-    --     parseView (parseSomeContractParam "user") <*>
-    --     parseBool "wrapped"
-    --   )
-    --   "Generate the (wrapped) parameter for the Whitelist contract: GetUser"
+    setAdministratorSubCmd =
+      mkCommandParser "setAdministrator"
+      (SetAdministrator <$> parseAddress "new-admin"
+      )
+      "SetAdministrator parameter for the ManagedLedger Metadata contract"
 
-    -- getWhitelistSubCmd =
-    --   mkCommandParser "GetWhitelist"
-    --   (GetWhitelist <$>
-    --     parseView (parseNatural "whitelistId") <*>
-    --     parseBool "wrapped"
-    --   )
-    --   "Generate the (wrapped) parameter for the Whitelist contract: GetWhitelist"
+    getAdministratorSubCmd =
+      mkCommandParser "getAdministrator"
+      (GetAdministrator <$> parseView_ (Proxy @Address)
+      )
+      "GetAdministrator parameter for the ManagedLedger Metadata contract"
 
-    -- getAdminSubCmd =
-    --   mkCommandParser "GetAdmin"
-    --   (GetAdmin <$>
-    --     parseView_ <*>
-    --     parseBool "wrapped"
-    --   )
-    --   "Generate the (wrapped) parameter for the Whitelist contract: GetAdmin"
+    mintSubCmd =
+      mkCommandParser "mint"
+      (Mint <$>
+        ((,) <$>
+          ((#to .!) <$> parseAddress "to") <*>
+          ((#value .!) <$> parseNatural "value")
+        )
+      )
+      "Mint parameter for the ManagedLedger Metadata contract"
 
-    -- wrappedParamSubCmd =
-    --   mkCommandParser "WrappedParam"
-    --   (WrappedParam <$> parseSomeContractParam "wrappedParam")
-    --   ("Generate a wrapped parameter for the Whitelist contract, given the " <>
-    --   "original contract's parameter")
+    burnSubCmd =
+      mkCommandParser "burn"
+      (Burn <$>
+        ((,) <$>
+          ((#from .!) <$> parseAddress "from") <*>
+          ((#value .!) <$> parseNatural "value")
+        )
+      )
+      "Burn parameter for the ManagedLedger Metadata contract"
+
+    getMetadataSubCmd =
+      mkCommandParser "getMetadata"
+      (GetMetadata <$> parseView @_ @[TokenMetadata] (pure [singleTokenTokenId]))
+      "GetMetadata parameter for the ManagedLedger Metadata contract"
 
 infoMod :: Opt.InfoMod CmdLnArgs
 infoMod = mconcat
@@ -235,138 +173,23 @@ infoMod = mconcat
 
 runCmdLnArgs :: CmdLnArgs -> IO ()
 runCmdLnArgs = \case
-  -- Print (SomeSing (st :: Sing t)) mOutput forceOneLine ->
-  --   withDict (singIT st) $
-  --   withDict (singTypeableT st) $
-  --   assertOpAbsense @t $
-  --   assertBigMapAbsense @t $
-  --   assertIsComparable @t $
-  --   withDict (compareOpCT @(ToCT (Value t))) $
-  --   maybe TL.putStrLn writeFileUtf8 mOutput $
-  --   printLorentzContract forceOneLine (Whitelist.whitelistContract @(Value t))
-  -- Init {..} ->
-  --   fromSomeStorage initialStorage $ \(initialStorage' :: Whitelist.Storage (Value s)) ->
-  --     assertIsComparable @s $
-  --     case initialWrappedStorage of
-  --       Nothing ->
-  --         TL.putStrLn . printLorentzValue @(Whitelist.Storage (Value s)) forceSingleLine $
-  --         initialStorage'
-  --       Just initialWrappedStorage' ->
-  --         fromSomeContractStorage initialWrappedStorage' $ \(initialWrappedStorage'' :: Value t) ->
-  --         let st = sing @t in
-  --         withDict (singIT st) $
-  --         withDict (singTypeableT st) $
-  --         TL.putStrLn $
-  --         printLorentzValue @(Wrapper.Storage (Value t) (Value s)) forceSingleLine $
-  --         Wrapper.Storage
-  --           initialWrappedStorage''
-  --           initialStorage'
-  -- AssertTransfer {..} ->
-  --   fromSomeTransferParams assertTransferParams $ \(assertTransferParams' :: Whitelist.TransferParams (Value t)) ->
-  --   TL.putStrLn . printLorentzValue forceSingleLine $
-  --   Whitelist.AssertTransfer assertTransferParams'
-  -- SetIssuer {..} ->
-  --   fromSomeContractParam newIssuer $ \(newIssuer' :: Value t) ->
-  --     let st = sing @t in
-  --     withDict (singIT st) $
-  --     withDict (singTypeableT st) $
-  --     if wrapped
-  --        then
-  --          TL.putStrLn . printLorentzValue @(Wrapper.Parameter () (Value t)) forceSingleLine $
-  --          Wrapper.WhitelistParameter $
-  --          Whitelist.SetIssuer newIssuer'
-  --        else
-  --          TL.putStrLn . printLorentzValue @(Whitelist.Parameter (Value t)) forceSingleLine $
-  --          Whitelist.OtherParameter $
-  --          Whitelist.SetIssuer newIssuer'
-  -- AddUser {..} ->
-  --   fromSomeContractParam newUser $ \(newUser' :: Value t) ->
-  --     let st = sing @t in
-  --     withDict (singIT st) $
-  --     withDict (singTypeableT st) $
-  --     if wrapped
-  --        then
-  --          TL.putStrLn . printLorentzValue @(Wrapper.Parameter () (Value t)) forceSingleLine $
-  --          Wrapper.WhitelistParameter $
-  --          Whitelist.AddUser $
-  --          Whitelist.UpdateUserParams newUser' newUserWhitelistId
-  --        else
-  --          TL.putStrLn . printLorentzValue @(Whitelist.Parameter (Value t)) forceSingleLine $
-  --          Whitelist.OtherParameter $
-  --          Whitelist.AddUser $
-  --          Whitelist.UpdateUserParams newUser' newUserWhitelistId
-  -- SetWhitelistOutbound {..} ->
-  --   if wrapped
-  --      then
-  --        TL.putStrLn . printLorentzValue @(Wrapper.Parameter () ()) forceSingleLine $
-  --        Wrapper.WhitelistParameter $
-  --        Whitelist.SetWhitelistOutbound whitelistOutboundParams
-  --      else
-  --        TL.putStrLn . printLorentzValue @(Whitelist.Parameter ()) forceSingleLine $
-  --        Whitelist.OtherParameter $
-  --        Whitelist.SetWhitelistOutbound whitelistOutboundParams
-  -- SetAdmin {..} ->
-  --   if wrapped
-  --      then
-  --        TL.putStrLn . printLorentzValue @(Wrapper.Parameter () ()) forceSingleLine $
-  --        Wrapper.WhitelistParameter $
-  --        Whitelist.SetAdmin admin
-  --      else
-  --        TL.putStrLn . printLorentzValue @(Whitelist.Parameter ()) forceSingleLine $
-  --        Whitelist.OtherParameter $
-  --        Whitelist.SetAdmin admin
-  -- GetIssuer {..} ->
-  --   if wrapped
-  --      then
-  --        TL.putStrLn . printLorentzValue @(Wrapper.Parameter () ()) forceSingleLine $
-  --        Wrapper.WhitelistParameter $
-  --        Whitelist.GetIssuer viewIssuer
-  --      else
-  --        TL.putStrLn . printLorentzValue @(Whitelist.Parameter ()) forceSingleLine $
-  --        Whitelist.OtherParameter $
-  --        Whitelist.GetIssuer viewIssuer
-  -- GetUser {..} ->
-  --   case viewUser of
-  --     View viewParam addr' ->
-  --       fromSomeContractParam viewParam $ \(viewParam' :: Value t) ->
-  --         let viewUser' = View viewParam' addr'
-  --          in if wrapped
-  --                then
-  --                  TL.putStrLn . printLorentzValue @(Wrapper.Parameter () (Value t)) forceSingleLine $
-  --                  Wrapper.WhitelistParameter $
-  --                  Whitelist.GetUser viewUser'
-  --                else
-  --                  TL.putStrLn . printLorentzValue @(Whitelist.Parameter (Value t)) forceSingleLine $
-  --                  Whitelist.OtherParameter $
-  --                  Whitelist.GetUser viewUser'
-  -- GetWhitelist {..} ->
-  --   if wrapped
-  --      then
-  --        TL.putStrLn . printLorentzValue @(Wrapper.Parameter () ()) forceSingleLine $
-  --        Wrapper.WhitelistParameter $
-  --        Whitelist.GetWhitelist viewWhitelist
-  --      else
-  --        TL.putStrLn . printLorentzValue @(Whitelist.Parameter ()) forceSingleLine $
-  --        Whitelist.OtherParameter $
-  --        Whitelist.GetWhitelist viewWhitelist
-  -- GetAdmin {..} ->
-  --   if wrapped
-  --      then
-  --        TL.putStrLn . printLorentzValue @(Wrapper.Parameter () ()) forceSingleLine $
-  --        Wrapper.WhitelistParameter $
-  --        Whitelist.GetAdmin viewAdmin
-  --      else
-  --        TL.putStrLn . printLorentzValue @(Whitelist.Parameter ()) forceSingleLine $
-  --        Whitelist.OtherParameter $
-  --        Whitelist.GetAdmin viewAdmin
-  -- WrappedParam {..} ->
-  --   fromSomeContractParam wrappedParam $ \(wrappedParam' :: Value t) ->
-  --     let st = sing @t in
-  --     withDict (singIT st) $
-  --     withDict (singTypeableT st) $
-  --     TL.putStrLn . printLorentzValue @(Wrapper.Parameter (Value t) ()) forceSingleLine $
-  --     Wrapper.WrappedParameter wrappedParam'
-  -- where
-  --   forceSingleLine = True
+  Print tokenMetadata' mOutput forceOneLine ->
+    maybe TL.putStrLn writeFileUtf8 mOutput $
+    printLorentzContract forceOneLine $
+    Metadata.managedLedgerMetadataContract tokenMetadata'
+  Init xs -> TL.putStrLn . printLorentzValue forceSingleLine $ xs
+  Transfer xs -> TL.putStrLn . printLorentzValue forceSingleLine $ xs
+  Approve xs -> TL.putStrLn . printLorentzValue forceSingleLine $ xs
+  GetAllowance xs -> TL.putStrLn . printLorentzValue forceSingleLine $ xs
+  GetBalance xs -> TL.putStrLn . printLorentzValue forceSingleLine $ xs
+  GetTotalSupply xs -> TL.putStrLn . printLorentzValue forceSingleLine $ xs
+  SetPause xs -> TL.putStrLn . printLorentzValue forceSingleLine $ xs
+  SetAdministrator xs -> TL.putStrLn . printLorentzValue forceSingleLine $ xs
+  GetAdministrator xs -> TL.putStrLn . printLorentzValue forceSingleLine $ xs
+  Mint xs -> TL.putStrLn . printLorentzValue forceSingleLine $ xs
+  Burn xs -> TL.putStrLn . printLorentzValue forceSingleLine $ xs
+  GetMetadata xs -> TL.putStrLn . printLorentzValue forceSingleLine $ xs
+  where
+    forceSingleLine = True
 
 
